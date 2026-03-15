@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/', include('certification.urls')),
     path('api/', include('vendor_product_mapping.urls')),
     path('api/', include('product_course_mapping.urls')),
+    path('api/', include('course_certification_mapping.urls')),
 ]
