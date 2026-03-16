@@ -5,17 +5,31 @@ from rest_framework import status
 from .models import Product
 from .serializers import ProductSerializer
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 class ProductListCreateAPIView(APIView):
     """
     API View to list all products and create a new product.
     """
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('is_active', openapi.IN_QUERY, description="Filter by active status", type=openapi.TYPE_BOOLEAN),
+            openapi.Parameter('vendor_id', openapi.IN_QUERY, description="Filter by vendor ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: ProductSerializer(many=True)}
+    )
     def get(self, request):
         active_status = request.query_params.get('is_active')
+        vendor_id = request.query_params.get('vendor_id')
         products = Product.objects.all()
         
         if active_status is not None:
             is_active = active_status.lower() == 'true'
             products = products.filter(is_active=is_active)
+        
+        if vendor_id:
+            products = products.filter(vendor_mappings__vendor_id=vendor_id)
             
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

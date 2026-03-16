@@ -5,17 +5,31 @@ from rest_framework import status
 from .models import Certification
 from .serializers import CertificationSerializer
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 class CertificationListCreateAPIView(APIView):
     """
     API View to list all certifications and create a new certification.
     """
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('is_active', openapi.IN_QUERY, description="Filter by active status", type=openapi.TYPE_BOOLEAN),
+            openapi.Parameter('course_id', openapi.IN_QUERY, description="Filter by course ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: CertificationSerializer(many=True)}
+    )
     def get(self, request):
         active_status = request.query_params.get('is_active')
+        course_id = request.query_params.get('course_id')
         certifications = Certification.objects.all()
         
         if active_status is not None:
             is_active = active_status.lower() == 'true'
             certifications = certifications.filter(is_active=is_active)
+        
+        if course_id:
+            certifications = certifications.filter(course_mappings__course_id=course_id)
             
         serializer = CertificationSerializer(certifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

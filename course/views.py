@@ -5,17 +5,31 @@ from rest_framework import status
 from .models import Course
 from .serializers import CourseSerializer
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 class CourseListCreateAPIView(APIView):
     """
     API View to list all courses and create a new course.
     """
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('is_active', openapi.IN_QUERY, description="Filter by active status", type=openapi.TYPE_BOOLEAN),
+            openapi.Parameter('product_id', openapi.IN_QUERY, description="Filter by product ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: CourseSerializer(many=True)}
+    )
     def get(self, request):
         active_status = request.query_params.get('is_active')
+        product_id = request.query_params.get('product_id')
         courses = Course.objects.all()
         
         if active_status is not None:
             is_active = active_status.lower() == 'true'
             courses = courses.filter(is_active=is_active)
+        
+        if product_id:
+            courses = courses.filter(product_mappings__product_id=product_id)
             
         serializer = CourseSerializer(courses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
